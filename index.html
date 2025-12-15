@@ -6,121 +6,143 @@
 <title>Dyeing Dashboard – RK KNIT FAB</title>
 
 <style>
+
+/* --- PAGE BASE --- */
 body {
   margin: 0;
-  padding: 12px;
+  padding: 15px;
   font-family: 'Poppins', sans-serif;
-  background: #f4f6fb;
+  background: linear-gradient(135deg, #dfe9f3 0%, #ffffff 100%);
 }
 
 /* Title */
 h2 {
   text-align: center;
-  margin: 10px 0 15px;
-  font-size: 20px;
+  font-size: 22px;
+  margin-bottom: 15px;
+  font-weight: 600;
+  color: #222;
 }
 
-/* Filters */
+/* -------- FILTERS (Glass) -------- */
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 8px;
   margin-bottom: 15px;
 }
 
 .filters input {
   flex: 1;
-  min-width: 120px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   font-size: 14px;
+  color: #222;
 }
 
-/* CARD VIEW (MOBILE) */
+/* -------- MOBILE CARD (Glass) -------- */
 .card {
-  background: white;
+  background: rgba(255,255,255,0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   padding: 14px;
-  margin-bottom: 10px;
-  border-radius: 12px;
-  font-size: 14px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255,255,255,0.4);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 /* Card Head */
 .card-head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   font-weight: 600;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
+  color: #222;
 }
 
-.details {
-  margin-top: 6px;
-  display: none;
-  background: #f9faff;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 13px;
-}
-
+/* "More details" */
 .expand-btn {
-  color: #007bff;
+  margin-top: 7px;
   font-size: 13px;
-  margin-top: 5px;
+  color: #007bff;
   cursor: pointer;
+}
+
+/* Details Box */
+.details {
+  background: rgba(255,255,255,0.3);
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.4);
+  display: none;
+  font-size: 13px;
 }
 
 /* Done Button */
 button {
-  background: #28a745;
+  padding: 6px 12px;
+  border-radius: 8px;
   border: none;
+  background: rgba(50,200,90,0.9);
   color: white;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 13px;
   cursor: pointer;
+  font-size: 13px;
+  backdrop-filter: blur(4px);
 }
-button:hover { background: #1e7e34; }
+button:hover { background: rgba(50,200,90,1); }
 
-/* Fade Remove */
+/* Fade animation */
 .fade-out {
   animation: fadeOut 0.35s forwards ease-out;
 }
 @keyframes fadeOut {
   from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.98); height: 0; margin: 0; }
+  to { opacity: 0; transform: scale(0.97); height: 0; margin: 0; }
 }
 
-/* DESKTOP TABLE */
+/* -------- DESKTOP GLASS TABLE -------- */
 #desktopTable { display: none; }
 
-@media (min-width: 720px) {
+@media (min-width: 760px) {
   .card { display: none; }
 
-  #desktopTable {
-    display: block;
-  }
+  #desktopTable { display: block; }
 
   table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
-    border-radius: 12px;
+    background: rgba(255,255,255,0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 14px;
     overflow: hidden;
-  }
-
-  th, td {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    text-align: center;
+    border: 1px solid rgba(255,255,255,0.4);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
   }
 
   th {
-    background: #e8ecf3;
+    background: rgba(255,255,255,0.45);
     font-weight: 600;
+    padding: 12px;
+  }
+
+  td {
+    padding: 10px;
+    color: #222;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+  }
+
+  tr:hover {
+    background: rgba(255,255,255,0.35);
   }
 }
+
 </style>
 </head>
 
@@ -128,17 +150,13 @@ button:hover { background: #1e7e34; }
 
 <h2>Dyeing Pending Lots</h2>
 
-<!-- Filters -->
 <div class="filters">
   <input id="lotFilter" placeholder="Search Lot">
   <input id="partyFilter" placeholder="Filter Party">
   <input id="colorFilter" placeholder="Filter Color">
 </div>
 
-<!-- Mobile -->
 <div id="listView"></div>
-
-<!-- Desktop -->
 <div id="desktopTable"></div>
 
 <script>
@@ -146,39 +164,34 @@ button:hover { background: #1e7e34; }
 const API = "https://script.google.com/macros/s/AKfycbz7Ggy8e_NA6Wg6R5QMxP22hjDf6esMiXN-UOn_1NwzuXNDM1kTjwmycfCvZ9JqT5pH/exec";
 let fullData = [];
 
-// Safe lowercase
 const safe = v => String(v || "").toLowerCase();
 
-// LOAD DATA
 async function loadData() {
-  const res = await fetch(API);
-  fullData = await res.json();
+  fullData = await (await fetch(API)).json();
   render();
 }
 
-// RENDER UI
 function render() {
 
-  const lotF = safe(lotFilter.value);
-  const partyF = safe(partyFilter.value);
-  const colorF = safe(colorFilter.value);
+  const fLot = safe(lotFilter.value);
+  const fParty = safe(partyFilter.value);
+  const fColor = safe(colorFilter.value);
 
   const filtered = fullData.filter(r =>
-    safe(r.lot).includes(lotF) &&
-    safe(r.party).includes(partyF) &&
-    safe(r.color).includes(colorF)
+    safe(r.lot).includes(fLot) &&
+    safe(r.party).includes(fParty) &&
+    safe(r.color).includes(fColor)
   );
 
-  // ---------- MOBILE CARD VIEW ----------
+  /* -------- Mobile Card Rendering -------- */
   let cards = "";
-  filtered.forEach(r => {
+  for (let r of filtered) {
     cards += `
       <div class="card" id="card-${r.lot}">
         <div class="card-head">
           ${r.lot}
           <button onclick="markDone('${r.lot}')">Done</button>
         </div>
-
         <div><b>Item:</b> ${r.item}</div>
         <div><b>Color:</b> ${r.color}</div>
         <div><b>Party:</b> ${r.party}</div>
@@ -194,23 +207,22 @@ function render() {
           <div><b>Status:</b> ${r.status}</div>
           <div><b>Delay:</b> ${r.delay}</div>
         </div>
+
       </div>
     `;
-  });
+  }
+
   listView.innerHTML = cards;
 
-
-  // ---------- DESKTOP TABLE ----------
+  /* -------- Desktop Table Rendering -------- */
   let table = `
-    <table>
-    <tr>
+    <table><tr>
       <th>Date</th><th>Lot</th><th>Item</th>
-      <th>Color</th><th>Party</th><th>Status</th>
-      <th>Done</th>
+      <th>Color</th><th>Party</th><th>Status</th><th>Done</th>
     </tr>
   `;
 
-  filtered.forEach(r => {
+  for (let r of filtered) {
     table += `
       <tr id="row-${r.lot}">
         <td>${r.date}</td>
@@ -220,23 +232,19 @@ function render() {
         <td>${r.party}</td>
         <td>${r.status}</td>
         <td><button onclick="markDone('${r.lot}')">Done</button></td>
-      </tr>
-    `;
-  });
+      </tr>`;
+  }
 
-  table += "</table>";
+  table += `</table>`;
   desktopTable.innerHTML = table;
 }
 
-// Expand details
 function toggleDetails(lot) {
-  const box = document.getElementById("details-" + lot);
-  box.style.display = box.style.display === "block" ? "none" : "block";
+  const d = document.getElementById("details-" + lot);
+  d.style.display = d.style.display === "block" ? "none" : "block";
 }
 
-// Done
 async function markDone(lot) {
-
   const c = document.getElementById("card-" + lot);
   const r = document.getElementById("row-" + lot);
 
@@ -244,11 +252,9 @@ async function markDone(lot) {
   if (r) r.classList.add("fade-out");
 
   await fetch(`${API}?action=done&lot=${lot}`);
-
-  setTimeout(loadData, 400);
+  setTimeout(loadData, 380);
 }
 
-// Filters live
 lotFilter.oninput = render;
 partyFilter.oninput = render;
 colorFilter.oninput = render;
