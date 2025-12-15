@@ -9,81 +9,94 @@
 
 body {
   margin: 0;
-  padding: 15px;
-  font-family: Poppins, sans-serif;
-  background: #f2f5f9;
+  padding: 12px;
+  font-family: 'Poppins', sans-serif;
+  background: #f6f7fb;
 }
 
+/* Title */
 h2 {
   text-align: center;
-  margin-bottom: 15px;
+  font-size: 20px;
+  margin-bottom: 10px;
 }
 
-/* FILTER BAR */
+/* Filters */
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 15px;
+  gap: 6px;
 }
 
 .filters input {
   flex: 1;
-  min-width: 120px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid #ddd;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
 }
 
-/* TABLE */
-table {
-  width: 100%;
-  border-collapse: collapse;
+/* CARD LIST VIEW (FASTEST FOR MOBILE) */
+.card {
   background: white;
-  border-radius: 10px;
-  overflow: hidden;
+  padding: 14px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  font-size: 14px;
 }
 
-th, td {
-  padding: 10px;
-  text-align: center;
-  border-bottom: 1px solid #eee;
-}
-
-th {
-  background: #f0f3f7;
+/* Top row (Lot + Status) */
+.card-head {
+  display: flex;
+  justify-content: space-between;
   font-weight: 600;
+  margin-bottom: 6px;
 }
 
-/* DONE BUTTON */
+/* Done button */
 button {
-  padding: 6px 12px;
-  border: none;
+  padding: 6px 10px;
   background: #28a745;
   color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-button:hover {
-  background: #1e7e34;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
 }
 
-/* ROW DELETE ANIMATION */
+/* Fade out animation */
 .fade-out {
   animation: fadeOut 0.4s forwards ease-out;
 }
+
 @keyframes fadeOut {
   from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.95); height: 0; }
+  to { opacity: 0; transform: scale(0.95); height: 0; margin: 0; }
 }
 
-/* PHONE OPTIMIZATION */
-@media (max-width: 600px) {
-  table, th, td {
-    font-size: 13px;
-    padding: 6px;
+/* DESKTOP MODE (SHOW TABLE) */
+@media (min-width: 700px) {
+
+  .card { display: none; } /* hide cards on desktop */
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
   }
+
+  th, td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+  }
+
+  th {
+    background: #e9eef5;
+  }
+
+  #desktopTable { display: block; }
 }
 
 </style>
@@ -93,56 +106,74 @@ button:hover {
 
 <h2>Dyeing Pending Lots</h2>
 
-<!-- FILTERS -->
 <div class="filters">
-  <input type="text" id="searchLot" placeholder="Search Lot">
-  <input type="text" id="filterParty" placeholder="Filter Party">
-  <input type="text" id="filterColor" placeholder="Filter Color">
+  <input id="searchLot" placeholder="Search Lot">
+  <input id="filterParty" placeholder="Filter Party">
+  <input id="filterColor" placeholder="Filter Color">
 </div>
 
-<div id="dataArea">Loading...</div>
+<div id="listView"></div>
+<div id="desktopTable"></div>
 
 <script>
 
-const API = "https://script.google.com/macros/s/AKfycbz7Ggy8e_NA6Wg6R5QMxP22hjDf6esMiXN-UOn_1NwzuXNDM1kTjwmycfCvZ9JqT5pH/exec";   // <-- Replace this
-
+const API = "https://script.google.com/macros/s/AKfycbz7Ggy8e_NA6Wg6R5QMxP22hjDf6esMiXN-UOn_1NwzuXNDM1kTjwmycfCvZ9JqT5pH/exec";
 let fullData = [];
 
-// LOAD DATA FROM GAS
+// LOAD DATA
 async function loadData() {
   const res = await fetch(API);
   fullData = await res.json();
-  renderTable(fullData);
+  render();
 }
 
-// RENDER TABLE
-function renderTable(data) {
+// SAFE FILTER STRING
+function safe(v) {
+  return String(v || "").toLowerCase();
+}
 
-  const search = document.getElementById("searchLot").value.toLowerCase();
-  const party = document.getElementById("filterParty").value.toLowerCase();
-  const color = document.getElementById("filterColor").value.toLowerCase();
+// RENDER BOTH LIST + TABLE
+function render() {
 
-  const filtered = data.filter(r => 
-    String(r.lot || "").toLowerCase().includes(search) &&
-    String(r.party || "").toLowerCase().includes(party) &&
-    String(r.color || "").toLowerCase().includes(color)
+  const fLot = safe(document.getElementById("searchLot").value);
+  const fParty = safe(document.getElementById("filterParty").value);
+  const fColor = safe(document.getElementById("filterColor").value);
+
+  const filtered = fullData.filter(r =>
+    safe(r.lot).includes(fLot) &&
+    safe(r.party).includes(fParty) &&
+    safe(r.color).includes(fColor)
   );
 
-  let html = `
-  <table>
-    <tr>
-      <th>Date</th>
-      <th>Lot</th>
-      <th>Item</th>
-      <th>Color</th>
-      <th>Party</th>
-      <th>Status</th>
-      <th>Done</th>
-    </tr>
-  `;
-
+  // ---------- MOBILE CARD VIEW ----------
+  let cards = "";
   filtered.forEach(r => {
-    html += `
+    cards += `
+      <div class="card" id="card-${r.lot}">
+        <div class="card-head">
+          <span>${r.lot}</span>
+          <button onclick="markDone('${r.lot}')">Done</button>
+        </div>
+        <div><b>Item:</b> ${r.item}</div>
+        <div><b>Color:</b> ${r.color}</div>
+        <div><b>Party:</b> ${r.party}</div>
+        <div><b>Date:</b> ${r.date}</div>
+      </div>
+    `;
+  });
+  document.getElementById("listView").innerHTML = cards;
+
+  // ---------- DESKTOP TABLE ----------
+  let table = `
+    <table>
+      <tr>
+        <th>Date</th><th>Lot</th><th>Item</th>
+        <th>Color</th><th>Party</th>
+        <th>Status</th><th>Done</th>
+      </tr>
+  `;
+  filtered.forEach(r => {
+    table += `
       <tr id="row-${r.lot}">
         <td>${r.date}</td>
         <td>${r.lot}</td>
@@ -154,31 +185,30 @@ function renderTable(data) {
       </tr>
     `;
   });
+  table += "</table>";
 
-  html += "</table>";
-  document.getElementById("dataArea").innerHTML = html;
+  document.getElementById("desktopTable").innerHTML = table;
 }
 
-// MARK DONE
+// DONE ACTION
 async function markDone(lot) {
-  
-  // 1. Smooth fade-out animation
-  const row = document.getElementById("row-" + lot);
-  if (row) row.classList.add("fade-out");
 
-  // 2. Call Apps Script to update FMS
+  const c = document.getElementById("card-" + lot);
+  const r = document.getElementById("row-" + lot);
+
+  if (c) c.classList.add("fade-out");
+  if (r) r.classList.add("fade-out");
+
   await fetch(`${API}?action=done&lot=${lot}`);
 
-  // 3. Reload fresh data after animation
   setTimeout(loadData, 450);
 }
 
-// LIVE FILTERS
-document.getElementById("searchLot").oninput = () => renderTable(fullData);
-document.getElementById("filterParty").oninput = () => renderTable(fullData);
-document.getElementById("filterColor").oninput = () => renderTable(fullData);
+// Filter Events
+searchLot.oninput = render;
+filterParty.oninput = render;
+filterColor.oninput = render;
 
-// START
 loadData();
 
 </script>
