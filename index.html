@@ -1,68 +1,188 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Basic Dashboard – RK KNIT FAB</title>
+<title>RK KNIT FAB – Dyeing Dashboard</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+
+body {
+  margin: 0;
+  padding: 15px;
+  font-family: Poppins, sans-serif;
+  background: #f2f5f9;
+}
+
+/* HEADER */
+h2 {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+/* FILTER BAR */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.filters input {
+  flex: 1;
+  min-width: 120px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+/* TABLE STYLE */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+}
+
+th {
+  background: #f0f3f7;
+  font-weight: 600;
+}
+
+/* DONE BUTTON */
+button {
+  padding: 6px 12px;
+  border: none;
+  background: #28a745;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+button:hover {
+  background: #1e7e34;
+}
+
+/* ROW REMOVE ANIMATION */
+.fade-out {
+  animation: fadeOut 0.4s forwards ease-out;
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); height: 0; }
+}
+
+/* PHONE OPTIMIZATION */
+@media (max-width: 600px) {
+  table, th, td {
+    font-size: 13px;
+    padding: 6px;
+  }
+}
+
+</style>
+
 </head>
 
 <body>
 
-<h2>Pending Lots (From Received From Dyeing)</h2>
+<h2>Dyeing Pending Lots</h2>
 
+<!-- FILTERS -->
+<div class="filters">
+  <input type="text" id="searchLot" placeholder="Search Lot">
+  <input type="text" id="filterParty" placeholder="Filter Party">
+  <input type="text" id="filterColor" placeholder="Filter Color">
+</div>
+
+<!-- DATA AREA -->
 <div id="dataArea">Loading...</div>
 
 <script>
 
-// YOUR Apps Script Web App URL
-const API = "https://script.google.com/macros/s/AKfycbz7Ggy8e_NA6Wg6R5QMxP22hjDf6esMiXN-UOn_1NwzuXNDM1kTjwmycfCvZ9JqT5pH/exec";
+const API = "https://script.google.com/macros/s/AKfycbz7Ggy8e_NA6Wg6R5QMxP22hjDf6esMiXN-UOn_1NwzuXNDM1kTjwmycfCvZ9JqT5pH/exec";  // Replace this
 
+let fullData = [];
+
+// LOAD DATA FAST
 async function loadData() {
   const res = await fetch(API);
-  const data = await res.json();
-  render(data);
+  fullData = await res.json();
+  renderTable(fullData);
 }
 
-function render(data) {
+// RENDER UI
+function renderTable(data) {
 
-  let html = "<table border='1' cellpadding='6' cellspacing='0'>";
-  html += `
-    <tr>
-      <th>Date</th>
-      <th>Lot</th>
-      <th>Item</th>
-      <th>Color</th>
-      <th>Party</th>
-      <th>Status</th>
-      <th>Done</th>
-    </tr>
-  `;
+  const search = document.getElementById("searchLot").value.toLowerCase();
+  const party = document.getElementById("filterParty").value.toLowerCase();
+  const color = document.getElementById("filterColor").value.toLowerCase();
 
-  data.forEach(row => {
+  const filtered = data.filter(r =>
+    r.lot.toString().toLowerCase().includes(search) &&
+    r.party.toLowerCase().includes(party) &&
+    r.color.toLowerCase().includes(color)
+  );
+
+  let html = `<table>
+  <tr>
+    <th>Date</th>
+    <th>Lot</th>
+    <th>Item</th>
+    <th>Color</th>
+    <th>Party</th>
+    <th>Status</th>
+    <th>Done</th>
+  </tr>`;
+
+  filtered.forEach((r, idx) => {
     html += `
-      <tr>
-        <td>${row.date}</td>
-        <td>${row.lot}</td>
-        <td>${row.item}</td>
-        <td>${row.color}</td>
-        <td>${row.party}</td>
-        <td>${row.status}</td>
-        <td><button onclick="markDone('${row.lot}')">Done</button></td>
+      <tr id="row-${r.lot}">
+        <td>${r.date}</td>
+        <td>${r.lot}</td>
+        <td>${r.item}</td>
+        <td>${r.color}</td>
+        <td>${r.party}</td>
+        <td>${r.status}</td>
+        <td><button onclick="markDone('${r.lot}')">Done</button></td>
       </tr>
     `;
   });
 
-  html += "</table>";
+  html += `</table>`;
 
   document.getElementById("dataArea").innerHTML = html;
 }
 
+// DONE ACTION
 async function markDone(lot) {
+  
+  // 1. Remove row visually (instant UX)
+  const row = document.getElementById("row-" + lot);
+  row.classList.add("fade-out");
+
+  // 2. Update FMS Sheet
   await fetch(`${API}?action=done&lot=${lot}`);
-  loadData(); // refresh
+
+  // 3. Hard refresh after short delay
+  setTimeout(loadData, 400);
 }
 
-loadData();
+// FILTER LIVE
+document.getElementById("searchLot").oninput = () => renderTable(fullData);
+document.getElementById("filterParty").oninput = () => renderTable(fullData);
+document.getElementById("filterColor").oninput = () => renderTable(fullData);
 
+loadData();
 </script>
 
 </body>
