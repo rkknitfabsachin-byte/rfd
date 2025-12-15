@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>RK KNIT FAB – Dyeing Dashboard</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -15,7 +14,6 @@ body {
   background: #f2f5f9;
 }
 
-/* HEADER */
 h2 {
   text-align: center;
   margin-bottom: 15px;
@@ -37,7 +35,7 @@ h2 {
   border: 1px solid #ddd;
 }
 
-/* TABLE STYLE */
+/* TABLE */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -71,11 +69,10 @@ button:hover {
   background: #1e7e34;
 }
 
-/* ROW REMOVE ANIMATION */
+/* ROW DELETE ANIMATION */
 .fade-out {
   animation: fadeOut 0.4s forwards ease-out;
 }
-
 @keyframes fadeOut {
   from { opacity: 1; transform: scale(1); }
   to { opacity: 0; transform: scale(0.95); height: 0; }
@@ -90,7 +87,6 @@ button:hover {
 }
 
 </style>
-
 </head>
 
 <body>
@@ -104,47 +100,48 @@ button:hover {
   <input type="text" id="filterColor" placeholder="Filter Color">
 </div>
 
-<!-- DATA AREA -->
 <div id="dataArea">Loading...</div>
 
 <script>
 
-const API = "https://script.google.com/macros/s/AKfycbz7Ggy8e_NA6Wg6R5QMxP22hjDf6esMiXN-UOn_1NwzuXNDM1kTjwmycfCvZ9JqT5pH/exec";  // Replace this
+const API = "https://script.google.com/macros/s/AKfycbz7Ggy8e_NA6Wg6R5QMxP22hjDf6esMiXN-UOn_1NwzuXNDM1kTjwmycfCvZ9JqT5pH/exec";   // <-- Replace this
 
 let fullData = [];
 
-// LOAD DATA FAST
+// LOAD DATA FROM GAS
 async function loadData() {
   const res = await fetch(API);
   fullData = await res.json();
   renderTable(fullData);
 }
 
-// RENDER UI
+// RENDER TABLE
 function renderTable(data) {
 
   const search = document.getElementById("searchLot").value.toLowerCase();
   const party = document.getElementById("filterParty").value.toLowerCase();
   const color = document.getElementById("filterColor").value.toLowerCase();
 
-  const filtered = data.filter(r =>
-    r.lot.toString().toLowerCase().includes(search) &&
-    r.party.toLowerCase().includes(party) &&
-    r.color.toLowerCase().includes(color)
+  const filtered = data.filter(r => 
+    String(r.lot || "").toLowerCase().includes(search) &&
+    String(r.party || "").toLowerCase().includes(party) &&
+    String(r.color || "").toLowerCase().includes(color)
   );
 
-  let html = `<table>
-  <tr>
-    <th>Date</th>
-    <th>Lot</th>
-    <th>Item</th>
-    <th>Color</th>
-    <th>Party</th>
-    <th>Status</th>
-    <th>Done</th>
-  </tr>`;
+  let html = `
+  <table>
+    <tr>
+      <th>Date</th>
+      <th>Lot</th>
+      <th>Item</th>
+      <th>Color</th>
+      <th>Party</th>
+      <th>Status</th>
+      <th>Done</th>
+    </tr>
+  `;
 
-  filtered.forEach((r, idx) => {
+  filtered.forEach(r => {
     html += `
       <tr id="row-${r.lot}">
         <td>${r.date}</td>
@@ -158,31 +155,32 @@ function renderTable(data) {
     `;
   });
 
-  html += `</table>`;
-
+  html += "</table>";
   document.getElementById("dataArea").innerHTML = html;
 }
 
-// DONE ACTION
+// MARK DONE
 async function markDone(lot) {
   
-  // 1. Remove row visually (instant UX)
+  // 1. Smooth fade-out animation
   const row = document.getElementById("row-" + lot);
-  row.classList.add("fade-out");
+  if (row) row.classList.add("fade-out");
 
-  // 2. Update FMS Sheet
+  // 2. Call Apps Script to update FMS
   await fetch(`${API}?action=done&lot=${lot}`);
 
-  // 3. Hard refresh after short delay
-  setTimeout(loadData, 400);
+  // 3. Reload fresh data after animation
+  setTimeout(loadData, 450);
 }
 
-// FILTER LIVE
+// LIVE FILTERS
 document.getElementById("searchLot").oninput = () => renderTable(fullData);
 document.getElementById("filterParty").oninput = () => renderTable(fullData);
 document.getElementById("filterColor").oninput = () => renderTable(fullData);
 
+// START
 loadData();
+
 </script>
 
 </body>
