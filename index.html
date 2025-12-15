@@ -2,89 +2,67 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>RK KNIT FAB – Dyeing Dashboard</title>
-<style>
-body {
-  font-family: Poppins, sans-serif;
-  background: #f0f2f5;
-  padding: 20px;
-}
-
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 4px 18px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
-  transition: 0.3s;
-}
-
-.card:hover { transform: scale(1.02); }
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 15px;
-}
-
-th, td {
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
-  text-align: center;
-}
-
-tr:hover { background: #fafafa; }
-
-.status {
-  padding: 5px 12px;
-  border-radius: 12px;
-  color: white;
-}
-
-.status.pending { background: orange; }
-.status.done { background: green; }
-</style>
+<title>Basic Dashboard – RK KNIT FAB</title>
 </head>
+
 <body>
 
-<h2>RK KNIT FAB – Dyeing Pending Dashboard</h2>
+<h2>Pending Lots (From Received From Dyeing)</h2>
 
 <div id="dataArea">Loading...</div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbw5kZf3o1Tu1XDP-LjCk4I99v-Fah9G2YU7M2NnNnCbwiOBxkxqPATHPj3lp9sWo1bx/exec";
+
+// YOUR Apps Script Web App URL
+const API = "https://script.google.com/macros/s/AKfycbz7Ggy8e_NA6Wg6R5QMxP22hjDf6esMiXN-UOn_1NwzuXNDM1kTjwmycfCvZ9JqT5pH/exec";
 
 async function loadData() {
-  const res = await fetch(API_URL);
+  const res = await fetch(API);
   const data = await res.json();
+  render(data);
+}
 
-  let html = `<div class='card'><table>
+function render(data) {
+
+  let html = "<table border='1' cellpadding='6' cellspacing='0'>";
+  html += `
     <tr>
-      <th>Lot</th><th>Item</th><th>Color</th><th>Weight</th>
-      <th>Party</th><th>Planned</th><th>Actual</th><th>Status</th><th>Delay</th>
-    </tr>`;
+      <th>Date</th>
+      <th>Lot</th>
+      <th>Item</th>
+      <th>Color</th>
+      <th>Party</th>
+      <th>Status</th>
+      <th>Done</th>
+    </tr>
+  `;
 
   data.forEach(row => {
     html += `
       <tr>
+        <td>${row.date}</td>
         <td>${row.lot}</td>
         <td>${row.item}</td>
         <td>${row.color}</td>
-        <td>${row.weight}</td>
         <td>${row.party}</td>
-        <td>${row.planned}</td>
-        <td>${row.actual}</td>
-        <td><span class="status ${row.status === "Done" ? "done" : "pending"}">${row.status}</span></td>
-        <td>${row.delay}</td>
+        <td>${row.status}</td>
+        <td><button onclick="markDone('${row.lot}')">Done</button></td>
       </tr>
     `;
   });
 
-  html += "</table></div>";
+  html += "</table>";
+
   document.getElementById("dataArea").innerHTML = html;
 }
 
+async function markDone(lot) {
+  await fetch(`${API}?action=done&lot=${lot}`);
+  loadData(); // refresh
+}
+
 loadData();
+
 </script>
 
 </body>
