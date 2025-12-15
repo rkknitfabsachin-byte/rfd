@@ -1,42 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>RK KNIT FAB – Dyeing Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dyeing Dashboard – RK KNIT FAB</title>
 
 <style>
-
 body {
   margin: 0;
   padding: 12px;
   font-family: 'Poppins', sans-serif;
-  background: #f6f7fb;
+  background: #f4f6fb;
 }
 
 /* Title */
 h2 {
   text-align: center;
+  margin: 10px 0 15px;
   font-size: 20px;
-  margin-bottom: 10px;
 }
 
 /* Filters */
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 7px;
+  margin-bottom: 15px;
 }
 
 .filters input {
   flex: 1;
-  padding: 8px;
-  border-radius: 8px;
+  min-width: 120px;
+  padding: 8px 10px;
+  border-radius: 10px;
   border: 1px solid #ccc;
   font-size: 14px;
 }
 
-/* CARD LIST VIEW (FASTEST FOR MOBILE) */
+/* CARD VIEW (MOBILE) */
 .card {
   background: white;
   padding: 14px;
@@ -45,44 +46,67 @@ h2 {
   font-size: 14px;
 }
 
-/* Top row (Lot + Status) */
+/* Card Head */
 .card-head {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
-/* Done button */
-button {
-  padding: 6px 10px;
-  background: #28a745;
-  color: white;
-  border: none;
-  border-radius: 6px;
+.details {
+  margin-top: 6px;
+  display: none;
+  background: #f9faff;
+  padding: 10px;
+  border-radius: 8px;
   font-size: 13px;
 }
 
-/* Fade out animation */
-.fade-out {
-  animation: fadeOut 0.4s forwards ease-out;
+.expand-btn {
+  color: #007bff;
+  font-size: 13px;
+  margin-top: 5px;
+  cursor: pointer;
 }
 
+/* Done Button */
+button {
+  background: #28a745;
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+button:hover { background: #1e7e34; }
+
+/* Fade Remove */
+.fade-out {
+  animation: fadeOut 0.35s forwards ease-out;
+}
 @keyframes fadeOut {
   from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.95); height: 0; margin: 0; }
+  to { opacity: 0; transform: scale(0.98); height: 0; margin: 0; }
 }
 
-/* DESKTOP MODE (SHOW TABLE) */
-@media (min-width: 700px) {
+/* DESKTOP TABLE */
+#desktopTable { display: none; }
 
-  .card { display: none; } /* hide cards on desktop */
+@media (min-width: 720px) {
+  .card { display: none; }
+
+  #desktopTable {
+    display: block;
+  }
 
   table {
     width: 100%;
     border-collapse: collapse;
     background: white;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
   }
 
@@ -93,12 +117,10 @@ button {
   }
 
   th {
-    background: #e9eef5;
+    background: #e8ecf3;
+    font-weight: 600;
   }
-
-  #desktopTable { display: block; }
 }
-
 </style>
 </head>
 
@@ -106,19 +128,26 @@ button {
 
 <h2>Dyeing Pending Lots</h2>
 
+<!-- Filters -->
 <div class="filters">
-  <input id="searchLot" placeholder="Search Lot">
-  <input id="filterParty" placeholder="Filter Party">
-  <input id="filterColor" placeholder="Filter Color">
+  <input id="lotFilter" placeholder="Search Lot">
+  <input id="partyFilter" placeholder="Filter Party">
+  <input id="colorFilter" placeholder="Filter Color">
 </div>
 
+<!-- Mobile -->
 <div id="listView"></div>
+
+<!-- Desktop -->
 <div id="desktopTable"></div>
 
 <script>
 
 const API = "https://script.google.com/macros/s/AKfycbz7Ggy8e_NA6Wg6R5QMxP22hjDf6esMiXN-UOn_1NwzuXNDM1kTjwmycfCvZ9JqT5pH/exec";
 let fullData = [];
+
+// Safe lowercase
+const safe = v => String(v || "").toLowerCase();
 
 // LOAD DATA
 async function loadData() {
@@ -127,22 +156,17 @@ async function loadData() {
   render();
 }
 
-// SAFE FILTER STRING
-function safe(v) {
-  return String(v || "").toLowerCase();
-}
-
-// RENDER BOTH LIST + TABLE
+// RENDER UI
 function render() {
 
-  const fLot = safe(document.getElementById("searchLot").value);
-  const fParty = safe(document.getElementById("filterParty").value);
-  const fColor = safe(document.getElementById("filterColor").value);
+  const lotF = safe(lotFilter.value);
+  const partyF = safe(partyFilter.value);
+  const colorF = safe(colorFilter.value);
 
   const filtered = fullData.filter(r =>
-    safe(r.lot).includes(fLot) &&
-    safe(r.party).includes(fParty) &&
-    safe(r.color).includes(fColor)
+    safe(r.lot).includes(lotF) &&
+    safe(r.party).includes(partyF) &&
+    safe(r.color).includes(colorF)
   );
 
   // ---------- MOBILE CARD VIEW ----------
@@ -151,27 +175,41 @@ function render() {
     cards += `
       <div class="card" id="card-${r.lot}">
         <div class="card-head">
-          <span>${r.lot}</span>
+          ${r.lot}
           <button onclick="markDone('${r.lot}')">Done</button>
         </div>
+
         <div><b>Item:</b> ${r.item}</div>
         <div><b>Color:</b> ${r.color}</div>
         <div><b>Party:</b> ${r.party}</div>
-        <div><b>Date:</b> ${r.date}</div>
+
+        <div class="expand-btn" onclick="toggleDetails('${r.lot}')">More details ▼</div>
+
+        <div class="details" id="details-${r.lot}">
+          <div><b>Date:</b> ${r.date}</div>
+          <div><b>Roll:</b> ${r.roll}</div>
+          <div><b>Weight:</b> ${r.weight}</div>
+          <div><b>Planned:</b> ${r.planned}</div>
+          <div><b>Actual:</b> ${r.actual}</div>
+          <div><b>Status:</b> ${r.status}</div>
+          <div><b>Delay:</b> ${r.delay}</div>
+        </div>
       </div>
     `;
   });
-  document.getElementById("listView").innerHTML = cards;
+  listView.innerHTML = cards;
+
 
   // ---------- DESKTOP TABLE ----------
   let table = `
     <table>
-      <tr>
-        <th>Date</th><th>Lot</th><th>Item</th>
-        <th>Color</th><th>Party</th>
-        <th>Status</th><th>Done</th>
-      </tr>
+    <tr>
+      <th>Date</th><th>Lot</th><th>Item</th>
+      <th>Color</th><th>Party</th><th>Status</th>
+      <th>Done</th>
+    </tr>
   `;
+
   filtered.forEach(r => {
     table += `
       <tr id="row-${r.lot}">
@@ -185,12 +223,18 @@ function render() {
       </tr>
     `;
   });
-  table += "</table>";
 
-  document.getElementById("desktopTable").innerHTML = table;
+  table += "</table>";
+  desktopTable.innerHTML = table;
 }
 
-// DONE ACTION
+// Expand details
+function toggleDetails(lot) {
+  const box = document.getElementById("details-" + lot);
+  box.style.display = box.style.display === "block" ? "none" : "block";
+}
+
+// Done
 async function markDone(lot) {
 
   const c = document.getElementById("card-" + lot);
@@ -201,13 +245,13 @@ async function markDone(lot) {
 
   await fetch(`${API}?action=done&lot=${lot}`);
 
-  setTimeout(loadData, 450);
+  setTimeout(loadData, 400);
 }
 
-// Filter Events
-searchLot.oninput = render;
-filterParty.oninput = render;
-filterColor.oninput = render;
+// Filters live
+lotFilter.oninput = render;
+partyFilter.oninput = render;
+colorFilter.oninput = render;
 
 loadData();
 
