@@ -7,24 +7,22 @@
 
 <style>
 
-/* --- PAGE BASE --- */
+/* PAGE BASE */
 body {
   margin: 0;
   padding: 15px;
   font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #dfe9f3 0%, #ffffff 100%);
+  background: linear-gradient(135deg, #dde7f2, #ffffff);
 }
 
-/* Title */
 h2 {
   text-align: center;
   font-size: 22px;
   margin-bottom: 15px;
   font-weight: 600;
-  color: #222;
 }
 
-/* -------- FILTERS (Glass) -------- */
+/* FILTERS */
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -39,33 +37,27 @@ h2 {
   border: 1px solid rgba(255,255,255,0.4);
   background: rgba(255,255,255,0.45);
   backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   font-size: 14px;
-  color: #222;
 }
 
-/* -------- MOBILE CARD (Glass) -------- */
+/* MOBILE CARD */
 .card {
   background: rgba(255,255,255,0.45);
   backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   padding: 14px;
   border-radius: 16px;
   margin-bottom: 12px;
   border: 1px solid rgba(255,255,255,0.4);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-/* Card Head */
 .card-head {
   display: flex;
   justify-content: space-between;
   font-weight: 600;
   margin-bottom: 6px;
-  color: #222;
 }
 
-/* "More details" */
+/* EXPAND DETAILS */
 .expand-btn {
   margin-top: 7px;
   font-size: 13px;
@@ -73,18 +65,15 @@ h2 {
   cursor: pointer;
 }
 
-/* Details Box */
 .details {
   background: rgba(255,255,255,0.3);
   margin-top: 8px;
   padding: 10px;
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.4);
   display: none;
-  font-size: 13px;
 }
 
-/* Done Button */
+/* DONE BUTTON */
 button {
   padding: 6px 12px;
   border-radius: 8px;
@@ -93,25 +82,23 @@ button {
   color: white;
   cursor: pointer;
   font-size: 13px;
-  backdrop-filter: blur(4px);
 }
 button:hover { background: rgba(50,200,90,1); }
 
-/* Fade animation */
+/* Fade */
 .fade-out {
-  animation: fadeOut 0.35s forwards ease-out;
+  animation: fadeOut 0.35s forwards;
 }
 @keyframes fadeOut {
   from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.97); height: 0; margin: 0; }
+  to { opacity: 0; transform: scale(0.98); height: 0; margin: 0; }
 }
 
-/* -------- DESKTOP GLASS TABLE -------- */
+/* DESKTOP TABLE */
 #desktopTable { display: none; }
 
 @media (min-width: 760px) {
   .card { display: none; }
-
   #desktopTable { display: block; }
 
   table {
@@ -119,27 +106,19 @@ button:hover { background: rgba(50,200,90,1); }
     border-collapse: collapse;
     background: rgba(255,255,255,0.5);
     backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     border-radius: 14px;
     overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.4);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
   }
 
   th {
-    background: rgba(255,255,255,0.45);
-    font-weight: 600;
     padding: 12px;
+    background: rgba(255,255,255,0.45);
   }
 
   td {
     padding: 10px;
-    color: #222;
     border-bottom: 1px solid rgba(255,255,255,0.3);
-  }
-
-  tr:hover {
-    background: rgba(255,255,255,0.35);
+    text-align: center;
   }
 }
 
@@ -154,13 +133,13 @@ button:hover { background: rgba(50,200,90,1); }
 <div class="filters">
   <input id="lotFilter" placeholder="Search Lot">
   <input id="partyFilter" placeholder="Filter Party">
-  <input id="itemFilter" placeholder="Filter Item"> <!-- FIXED -->
+  <input id="itemFilter" placeholder="Filter Item">
 </div>
 
-<!-- Mobile -->
+<!-- Mobile list -->
 <div id="listView"></div>
 
-<!-- Desktop -->
+<!-- Desktop table -->
 <div id="desktopTable"></div>
 
 <script>
@@ -177,17 +156,26 @@ async function loadData() {
 
 function render() {
 
-  const fLot   = safe(lotFilter.value);
+  const fLot = safe(lotFilter.value);
   const fParty = safe(partyFilter.value);
-  const fItem  = safe(itemFilter.value);   // FIXED: item filter
+  const fItem = safe(itemFilter.value);
 
-  const filtered = fullData.filter(r =>
+  let filtered = fullData.filter(r =>
     safe(r.lot).includes(fLot) &&
     safe(r.party).includes(fParty) &&
-    safe(r.item).includes(fItem)   // FIXED: item match
+    safe(r.item).includes(fItem)
   );
 
-  /* -------- Mobile Card Rendering -------- */
+  // --- DATE SORTING BY MAIN DATE ---
+  const clean = s => {
+    if (!s) return 0;
+    let x = s.replace(/[^0-9]/g, ""); // strip all non-numbers
+    return parseInt(x.slice(4,8) + x.slice(2,4) + x.slice(0,2));  
+  };
+  filtered.sort((a, b) => clean(b.date) - clean(a.date));  // Newest first
+
+
+  // --- MOBILE CARDS ---
   let cards = "";
   for (let r of filtered) {
     cards += `
@@ -206,26 +194,27 @@ function render() {
           <div><b>Date:</b> ${r.date}</div>
           <div><b>Roll:</b> ${r.roll}</div>
           <div><b>Weight:</b> ${r.weight}</div>
-
-          <!-- EXACT planned date format preserved -->
           <div><b>Planned:</b> ${r.planned}</div>
-
           <div><b>Actual:</b> ${r.actual}</div>
           <div><b>Status:</b> ${r.status}</div>
           <div><b>Delay:</b> ${r.delay}</div>
         </div>
-
       </div>
     `;
   }
-
   listView.innerHTML = cards;
 
-  /* -------- Desktop Table Rendering -------- */
+
+  // --- DESKTOP TABLE ---
   let table = `
     <table><tr>
-      <th>Date</th><th>Lot</th><th>Item</th>
-      <th>Color</th><th>Party</th><th>Status</th><th>Done</th>
+      <th>Date</th>
+      <th>Lot</th>
+      <th>Item</th>
+      <th>Color</th>
+      <th>Party</th>
+      <th>Status</th>
+      <th>Done</th>
     </tr>
   `;
 
@@ -239,10 +228,11 @@ function render() {
         <td>${r.party}</td>
         <td>${r.status}</td>
         <td><button onclick="markDone('${r.lot}')">Done</button></td>
-      </tr>`;
+      </tr>
+    `;
   }
 
-  table += `</table>`;
+  table += "</table>";
   desktopTable.innerHTML = table;
 }
 
@@ -259,12 +249,12 @@ async function markDone(lot) {
   if (r) r.classList.add("fade-out");
 
   await fetch(`${API}?action=done&lot=${lot}`);
-  setTimeout(loadData, 380);
+  setTimeout(loadData, 350);
 }
 
-lotFilter.oninput   = render;
+lotFilter.oninput = render;
 partyFilter.oninput = render;
-itemFilter.oninput  = render;  // FIXED
+itemFilter.oninput = render;
 
 loadData();
 
