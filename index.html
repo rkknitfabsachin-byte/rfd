@@ -150,13 +150,17 @@ button:hover { background: rgba(50,200,90,1); }
 
 <h2>Dyeing Pending Lots</h2>
 
+<!-- Filters -->
 <div class="filters">
   <input id="lotFilter" placeholder="Search Lot">
   <input id="partyFilter" placeholder="Filter Party">
-  <input id="colorFilter" placeholder="Filter Color">
+  <input id="itemFilter" placeholder="Filter Item"> <!-- FIXED -->
 </div>
 
+<!-- Mobile -->
 <div id="listView"></div>
+
+<!-- Desktop -->
 <div id="desktopTable"></div>
 
 <script>
@@ -173,14 +177,14 @@ async function loadData() {
 
 function render() {
 
-  const fLot = safe(lotFilter.value);
+  const fLot   = safe(lotFilter.value);
   const fParty = safe(partyFilter.value);
-  const fColor = safe(colorFilter.value);
+  const fItem  = safe(itemFilter.value);   // FIXED: item filter
 
   const filtered = fullData.filter(r =>
     safe(r.lot).includes(fLot) &&
     safe(r.party).includes(fParty) &&
-    safe(r.color).includes(fColor)
+    safe(r.item).includes(fItem)   // FIXED: item match
   );
 
   /* -------- Mobile Card Rendering -------- */
@@ -202,7 +206,10 @@ function render() {
           <div><b>Date:</b> ${r.date}</div>
           <div><b>Roll:</b> ${r.roll}</div>
           <div><b>Weight:</b> ${r.weight}</div>
+
+          <!-- EXACT planned date format preserved -->
           <div><b>Planned:</b> ${r.planned}</div>
+
           <div><b>Actual:</b> ${r.actual}</div>
           <div><b>Status:</b> ${r.status}</div>
           <div><b>Delay:</b> ${r.delay}</div>
@@ -255,9 +262,9 @@ async function markDone(lot) {
   setTimeout(loadData, 380);
 }
 
-lotFilter.oninput = render;
+lotFilter.oninput   = render;
 partyFilter.oninput = render;
-colorFilter.oninput = render;
+itemFilter.oninput  = render;  // FIXED
 
 loadData();
 
